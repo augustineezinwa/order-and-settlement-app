@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ORDER_STATUSES } from "../types/orders.js";
+import { ORDER_STATUSES } from "../types/orders";
 
 export const lineItemSchema = z.object({
   description: z.string().min(1),

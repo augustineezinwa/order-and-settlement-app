@@ -49,8 +49,8 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 - [x] Order detail page — line items + full payment history (with running balance)
 - [x] Dashboard overview — portfolio summary strip + status-mix and amounts-due charts
 - [x] Sign up / sign in pages, wired to `POST /auth/sign-up` and `POST /auth/sign-in` (session in localStorage, nav shows email + sign out)
-- [ ] Wire dashboard/detail to live API (currently demo data — see `src/lib/orders/demo-orders.ts`)
-- [ ] Create order form (dynamic line items)
+- [x] Wire dashboard/detail to live API (currently demo data — see `src/lib/orders/demo-orders.ts`)
+- [x] Create order form (dynamic line items)
 - [ ] Record payment form with validation error display (button is present but disabled until wired)
 
 ## API polish
