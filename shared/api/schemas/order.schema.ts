@@ -24,5 +24,16 @@ export const listOrdersQuerySchema = z.object({
     .optional(),
 });
 
+export const exportOrdersQuerySchema = z
+  .object({
+    from: z.string().date("Use YYYY-MM-DD for the start date."),
+    to: z.string().date("Use YYYY-MM-DD for the end date."),
+  })
+  .refine(({ from, to }) => from <= to, {
+    message: "Start date must be on or before end date.",
+    path: ["from"],
+  });
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
+export type ExportOrdersQuery = z.infer<typeof exportOrdersQuerySchema>;

@@ -62,8 +62,8 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 ## Stretch goals (optional)
 
 - [ ] Refunds (negative payment or separate entity)
-- [ ] Audit log of status changes with timestamps
-- [ ] CSV export of orders for a date range
+- [x] Audit log of status changes with timestamps
+- [x] CSV export of orders for a date range
 
 ## Deployment & docs
 

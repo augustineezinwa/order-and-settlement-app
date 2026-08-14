@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { LedgerSummary } from "@/components/dashboard/ledger-summary";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
+import { OrderStatusHistory } from "@/components/dashboard/order-status-history";
 import { RecordPaymentForm } from "@/components/dashboard/record-payment-form";
 import {
   Table,
@@ -156,6 +157,8 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </Table>
         )}
       </section>
+
+      <OrderStatusHistory orderId={order.id} />
     </div>
   );
 }

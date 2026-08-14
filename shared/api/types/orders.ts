@@ -33,3 +33,14 @@ export type OrderDetail = OrderSummary & {
 export type ListOrdersResponse = {
   orders: OrderSummary[];
 };
+
+export type OrderStatusHistoryEntry = {
+  id: string;
+  fromStatus: OrderStatus | null;
+  toStatus: OrderStatus;
+  changedAt: string;
+};
+
+export type OrderStatusHistoryResponse = {
+  history: OrderStatusHistoryEntry[];
+};

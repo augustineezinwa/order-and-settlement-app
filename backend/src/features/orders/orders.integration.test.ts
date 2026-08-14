@@ -75,7 +75,7 @@ describe.skipIf(!dbReady)("orders integration", () => {
   const orderService = createOrderService(db);
 
   async function resetOrders() {
-    await sql`truncate table payments, order_items, orders cascade`;
+    await sql`truncate table order_status_history, payment_audit_log, payments, order_items, orders cascade`;
   }
 
   beforeEach(async () => {
@@ -254,5 +254,98 @@ describe.skipIf(!dbReady)("orders integration", () => {
     const app = createApp({ authService: createMockAuthService(), orderService });
     const res = await app.request("/orders");
     expect(res.status).toBe(401);
+  });
+
+  it("returns actionable validation errors for export query", async () => {
+    const app = createApp({ authService: createMockAuthService(), orderService });
+    const res = await app.request("/orders/export", { headers: headersFor("token-user-a") });
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: "VALIDATION_ERROR" },
+    });
+  });
+
+  it("exports orders filtered by due date range", async () => {
+    const app = createApp({ authService: createMockAuthService(), orderService });
+    const inRangeDue = daysFromToday(10);
+    const outOfRangeDue = daysFromToday(40);
+
+    await app.request("/orders", {
+      method: "POST",
+      headers: headersFor("token-user-a"),
+      body: JSON.stringify({
+        customerName: "In range",
+        dueDate: inRangeDue,
+        lineItems: sampleLineItems,
+      }),
+    });
+
+    await app.request("/orders", {
+      method: "POST",
+      headers: headersFor("token-user-a"),
+      body: JSON.stringify({
+        customerName: "Out of range",
+        dueDate: outOfRangeDue,
+        lineItems: sampleLineItems,
+      }),
+    });
+
+    const from = daysFromToday(0);
+    const to = daysFromToday(20);
+    const res = await app.request(`/orders/export?from=${from}&to=${to}`, {
+      headers: headersFor("token-user-a"),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/csv");
+    const csv = await res.text();
+    expect(csv).toContain("In range");
+    expect(csv).not.toContain("Out of range");
+  });
+
+  it("records status history on create and partial payment", async () => {
+    const app = createApp({ authService: createMockAuthService(), orderService });
+    const createRes = await app.request("/orders", {
+      method: "POST",
+      headers: headersFor("token-user-a"),
+      body: JSON.stringify({
+        customerName: "Acme",
+        dueDate: daysFromToday(10),
+        lineItems: sampleLineItems,
+      }),
+    });
+    const created = (await createRes.json()) as OrderSummary;
+
+    const initialHistory = await app.request(`/orders/${created.id}/status-history`, {
+      headers: headersFor("token-user-a"),
+    });
+    expect(initialHistory.status).toBe(200);
+    await expect(initialHistory.json()).resolves.toEqual({
+      history: [
+        expect.objectContaining({
+          fromStatus: null,
+          toStatus: "pending",
+        }),
+      ],
+    });
+
+    const payRes = await app.request(`/orders/${created.id}/payments`, {
+      method: "POST",
+      headers: { ...headersFor("token-user-a"), "Idempotency-Key": "test-key-1" },
+      body: JSON.stringify({ amountCents: 100, paidAt: daysFromToday(0) }),
+    });
+    expect(payRes.status).toBe(201);
+
+    const historyRes = await app.request(`/orders/${created.id}/status-history`, {
+      headers: headersFor("token-user-a"),
+    });
+    expect(historyRes.status).toBe(200);
+    const body = (await historyRes.json()) as { history: Array<{ fromStatus: string | null; toStatus: string }> };
+    expect(body.history).toHaveLength(2);
+    expect(body.history[1]).toMatchObject({
+      fromStatus: "pending",
+      toStatus: "partially_paid",
+    });
   });
 });

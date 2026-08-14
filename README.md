@@ -112,11 +112,13 @@ All routes require `Authorization: Bearer <accessToken>` except auth endpoints.
 | `GET`    | `/health`              | Health check                                  |
 | `POST`   | `/orders`              | Create order (customer, due date, line items) |
 | `GET`    | `/orders`              | List orders (`?status=` optional)             |
+| `GET`    | `/orders/export`       | CSV export by due date (`?from=&to=`, inclusive) |
 | `GET`    | `/orders/:id`          | Order detail + payments                       |
 | `PATCH`  | `/orders/:id`          | Update order (blocked after first payment)    |
 | `DELETE` | `/orders/:id`          | Delete order (only if no payments)            |
 | `POST`   | `/orders/:id/payments` | Record payment (`Idempotency-Key` header)     |
 | `GET`    | `/orders/:id/payments` | Payment history                               |
+| `GET`    | `/orders/:id/status-history` | Stored status transitions (payment-driven) |
 
 
 **Error shape** (all routes):
@@ -142,6 +144,10 @@ Status is derived at read time from line items and payment history:
 
 **Edge case:** An order past its due date that receives a final payment becomes `paid`, not `overdue`.
 
+**Status audit log:** Payment-driven transitions (`pending` → `partially_paid` → `paid`) are stored in `order_status_history` via a database trigger and exposed at `GET /orders/:id/status-history`. `overdue` is never written to the database — it is derived at read time only, so it does not appear in the audit log.
+
+**CSV export:** `GET /orders/export?from=YYYY-MM-DD&to=YYYY-MM-DD` returns orders whose **due date** falls within the inclusive range. Status in the CSV uses the same derived display rules as the dashboard (including `overdue`).
+
 ## Business rules
 
 - Order total = Σ(quantity × unit price). Amounts stored in **cents**. No tax or discount.
@@ -164,7 +170,7 @@ Replaying the same `Idempotency-Key` with the same payload returns the original 
 
 - **Single-container deploy** — Next.js and Hono share one Render service; simpler URL, both processes restart together.
 - **Session in localStorage** — not httpOnly cookies; acceptable for a take-home demo.
-- **Derived status** — not stored as a separate audit trail (stretch goal).
+- **Derived overdue** — `overdue` is computed at read time; stored status history covers payment-driven transitions only.
 - **Supabase** — managed Postgres + Auth; no self-hosted DB.
 - **No tax, discounts, or multi-currency.**
 

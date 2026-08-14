@@ -1,11 +1,11 @@
 import type { OrderDetail, OrderSummary, OrderStatus } from "@shared/api/types/orders.js";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { HttpError } from "../../../global/errors.js";
 import type { Database } from "../../../lib/db/index.js";
 import { orderItems, orders } from "../../../lib/db/schema/orders.js";
 import { payments } from "../../../lib/db/schema/payments.js";
-import type { CreateOrderInput, UpdateOrderInput } from "../schemas/order.schema.js";
+import type { CreateOrderInput, ExportOrdersQuery, UpdateOrderInput } from "../schemas/order.schema.js";
 import { deriveDisplayStatus } from "./orderStatus.service.js";
 import {
   computeAmountDue,
@@ -140,6 +140,33 @@ export function createOrderService(db: Database) {
       }
 
       return summaries;
+    },
+
+    async exportOrders(userId: string, range: ExportOrdersQuery): Promise<OrderSummary[]> {
+      const userOrders = await db
+        .select()
+        .from(orders)
+        .where(
+          and(
+            eq(orders.userId, userId),
+            gte(orders.dueDate, range.from),
+            lte(orders.dueDate, range.to),
+          ),
+        );
+
+      const orderIds = userOrders.map((order) => order.id);
+      const lineItemsByOrderId = await loadLineItemsByOrderId(orderIds);
+      const paidByOrderId = await loadPaidCentsByOrderId(orderIds);
+
+      return userOrders.map((order) =>
+        mapOrderSummary({
+          id: order.id,
+          customerName: order.customerName,
+          dueDate: order.dueDate,
+          lineItems: lineItemsByOrderId.get(order.id) ?? [],
+          paidCents: paidByOrderId.get(order.id) ?? 0,
+        }),
+      );
     },
 
     async getOrderById(userId: string, orderId: string): Promise<OrderDetail> {
