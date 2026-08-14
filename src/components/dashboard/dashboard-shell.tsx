@@ -15,7 +15,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Link href="/dashboard" className="text-foreground font-medium">
                 Orders
               </Link>
-              <span className="text-muted-foreground/60">Payments</span>
             </nav>
           </div>
           <div className="flex items-center gap-2">

@@ -12,11 +12,13 @@ Order tracking and payment ledger for a small business operator. Create orders w
 
 ## Architecture (production)
 
+See **[ARCHITECTURE.md](ARCHITECTURE.md)** for diagrams (system context, request flow, backend/frontend layout, data model) and stack details.
+
 Single Docker container on Render:
 
 - **Next.js** listens on the public `PORT` (serves the dashboard)
 - **Hono API** runs internally on port `8787`
-- Browser calls `/api/*`; Next.js rewrites to the in-container API 
+- Browser calls `/api/*`; Next.js rewrites to the in-container API
 - Migrations run on container startup via Drizzle
 
 Local development uses two processes (backend `:8787`, frontend `:3000`), same as before.
