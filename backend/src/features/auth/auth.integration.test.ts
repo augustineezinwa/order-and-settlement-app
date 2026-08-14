@@ -82,4 +82,27 @@ describe("auth integration", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ userId: mockUser.id });
   });
+
+  it("returns actionable validation errors for invalid sign-up input", async () => {
+    const app = createApp({ authService: createMockAuthService() });
+    const res = await app.request("/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "not-an-email", password: "short" }),
+    });
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: {
+        message: "Enter a valid email address.",
+        code: "VALIDATION_ERROR",
+        details: {
+          fieldErrors: {
+            email: ["Enter a valid email address."],
+            password: ["Password must be at least 8 characters."],
+          },
+        },
+      },
+    });
+  });
 });

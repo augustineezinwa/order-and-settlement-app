@@ -5,7 +5,13 @@ import { useRef, useState, type FormEvent } from "react";
 import { ApiError } from "@/api/client";
 import { useRecordPayment } from "@/api/payments/mutations";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  fieldErrorsFromDetails,
+  mapRecordPaymentFieldErrors,
+  type RecordPaymentFieldErrors,
+} from "@/lib/api/field-errors";
 import { formatUsd, parseUsdToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { recordPaymentSchema } from "@shared/api/schemas/payment.schema";
@@ -15,12 +21,7 @@ type RecordPaymentFormProps = {
   amountDueCents: number;
 };
 
-type FieldErrors = {
-  amount?: string;
-  paidAt?: string;
-  note?: string;
-  form?: string;
-};
+type FieldErrors = RecordPaymentFieldErrors;
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -118,6 +119,13 @@ export function RecordPaymentForm({ orderId, amountDueCents }: RecordPaymentForm
         onSuccess: () => {
           closeForm();
         },
+        onError: (error) => {
+          if (!(error instanceof ApiError)) return;
+          const apiFieldErrors = fieldErrorsFromDetails(error.details);
+          if (apiFieldErrors) {
+            setFieldErrors(mapRecordPaymentFieldErrors(apiFieldErrors));
+          }
+        },
       },
     );
   }
@@ -150,90 +158,86 @@ export function RecordPaymentForm({ orderId, amountDueCents }: RecordPaymentForm
   }
 
   return (
-    <div className="flex flex-col items-end gap-3">
-      {!open ? (
-        <Button type="button" size="lg" className="rounded-full" onClick={openForm}>
-          Record payment
-        </Button>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="w-full max-w-md rounded-lg border bg-card p-4 shadow-sm"
-        >
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-medium">Record payment</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Amount due: {formatUsd(amountDueCents)}
-              </p>
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={closeForm}>
-              Cancel
-            </Button>
-          </div>
+    <>
+      <Button type="button" size="lg" className="rounded-full" onClick={openForm}>
+        Record payment
+      </Button>
 
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen) {
+            openForm();
+            return;
+          }
+          closeForm();
+        }}
+        title="Record payment"
+        description={`Amount due: ${formatUsd(amountDueCents)}`}
+      >
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {formError && !amountError && (
             <p
               role="alert"
-              className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
             >
               {formError}
             </p>
           )}
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="payment-amount" className="text-sm font-medium">
-                Amount
-              </label>
-              <Input
-                id="payment-amount"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  if (fieldErrors.amount) setFieldErrors((prev) => ({ ...prev, amount: undefined }));
-                  if (recordPayment.error) recordPayment.reset();
-                }}
-                aria-invalid={Boolean(amountError)}
-                className={cn("h-10", amountError && "border-destructive")}
-              />
-              {amountError && <p className="text-xs text-destructive">{amountError}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="payment-date" className="text-sm font-medium">
-                Payment date
-              </label>
-              <Input
-                id="payment-date"
-                type="date"
-                value={paidAt}
-                onChange={(e) => setPaidAt(e.target.value)}
-                aria-invalid={Boolean(fieldErrors.paidAt)}
-                className={cn("h-10", fieldErrors.paidAt && "border-destructive")}
-              />
-              {fieldErrors.paidAt && <p className="text-xs text-destructive">{fieldErrors.paidAt}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="payment-note" className="text-sm font-medium">
-                Note <span className="font-normal text-muted-foreground">(optional)</span>
-              </label>
-              <Input
-                id="payment-note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                aria-invalid={Boolean(fieldErrors.note)}
-                className={cn("h-10", fieldErrors.note && "border-destructive")}
-              />
-              {fieldErrors.note && <p className="text-xs text-destructive">{fieldErrors.note}</p>}
-            </div>
+          <div className="space-y-1.5">
+            <label htmlFor="payment-amount" className="text-sm font-medium">
+              Amount
+            </label>
+            <Input
+              id="payment-amount"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (fieldErrors.amount) setFieldErrors((prev) => ({ ...prev, amount: undefined }));
+                if (recordPayment.error) recordPayment.reset();
+              }}
+              aria-invalid={Boolean(amountError)}
+              className={cn("h-10", amountError && "border-destructive")}
+            />
+            {amountError && <p className="text-xs text-destructive">{amountError}</p>}
           </div>
 
-          <div className="mt-5 flex justify-end">
+          <div className="space-y-1.5">
+            <label htmlFor="payment-date" className="text-sm font-medium">
+              Payment date
+            </label>
+            <Input
+              id="payment-date"
+              type="date"
+              value={paidAt}
+              onChange={(e) => setPaidAt(e.target.value)}
+              aria-invalid={Boolean(fieldErrors.paidAt)}
+              className={cn("h-10", fieldErrors.paidAt && "border-destructive")}
+            />
+            {fieldErrors.paidAt && <p className="text-xs text-destructive">{fieldErrors.paidAt}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="payment-note" className="text-sm font-medium">
+              Note <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              id="payment-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              aria-invalid={Boolean(fieldErrors.note)}
+              className={cn("h-10", fieldErrors.note && "border-destructive")}
+            />
+            {fieldErrors.note && <p className="text-xs text-destructive">{fieldErrors.note}</p>}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={closeForm}>
+              Cancel
+            </Button>
             <button
               type="submit"
               disabled={recordPayment.isPending}
@@ -243,7 +247,7 @@ export function RecordPaymentForm({ orderId, amountDueCents }: RecordPaymentForm
             </button>
           </div>
         </form>
-      )}
-    </div>
+      </Dialog>
+    </>
   );
 }
