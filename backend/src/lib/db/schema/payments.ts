@@ -12,6 +12,8 @@ export const payments = pgTable(
       .references(() => orders.id, { onDelete: "cascade" }),
     // Supabase Auth user who recorded the payment; no FK to auth.users, like orders.userId.
     recordedBy: uuid("recorded_by").notNull(),
+    // Client-supplied key (e.g. from double-click protection); unique when present.
+    idempotencyKey: text("idempotency_key").unique(),
     // Minimum recordable payment is $0.01, i.e. 1 cent.
     amountCents: bigint("amount_cents", { mode: "number" }).notNull(),
     paidAt: date("paid_at").notNull(),

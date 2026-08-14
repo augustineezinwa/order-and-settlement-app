@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 
 import type { AuthService } from "../auth/services/auth.service.js";
+import { listPaymentsController } from "../payments/controllers/listPayments.controller.js";
+import { recordPaymentController } from "../payments/controllers/recordPayment.controller.js";
+import type { PaymentService } from "../payments/services/payment.service.js";
 import { createRequireAuth } from "../../global/middlewares/auth.js";
 import type { AppEnv } from "../../types/appEnv.js";
 import { createOrderController } from "./controllers/createOrder.controller.js";
@@ -11,7 +14,11 @@ import { updateOrderController } from "./controllers/updateOrder.controller.js";
 import { createValidateOrderOwnership } from "./middlewares/validateOrderOwnership.js";
 import type { OrderService } from "./services/order.service.js";
 
-export function createOrderRoutes(deps: { authService: AuthService; orderService: OrderService }) {
+export function createOrderRoutes(deps: {
+  authService: AuthService;
+  orderService: OrderService;
+  paymentService: PaymentService;
+}) {
   const router = new Hono<AppEnv>();
   const requireAuth = createRequireAuth(deps.authService);
   const validateOrderOwnership = createValidateOrderOwnership(deps.orderService);
@@ -20,6 +27,8 @@ export function createOrderRoutes(deps: { authService: AuthService; orderService
 
   router.post("/", createOrderController(deps.orderService));
   router.get("/", listOrdersController(deps.orderService));
+  router.post("/:id/payments", validateOrderOwnership, recordPaymentController(deps.paymentService));
+  router.get("/:id/payments", validateOrderOwnership, listPaymentsController(deps.paymentService));
   router.get("/:id", validateOrderOwnership, getOrderController(deps.orderService));
   router.patch("/:id", validateOrderOwnership, updateOrderController(deps.orderService));
   router.delete("/:id", validateOrderOwnership, deleteOrderController(deps.orderService));
