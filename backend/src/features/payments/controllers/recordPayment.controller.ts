@@ -17,7 +17,12 @@ export function recordPaymentController(paymentService: PaymentService) {
       throw new HttpError(400, parsed.error.issues[0]?.message ?? "Invalid request body", "VALIDATION_ERROR");
     }
 
-    const result = await paymentService.recordPayment(c.get("userId"), orderId, parsed.data);
+    const idempotencyKey = c.req.header("Idempotency-Key")?.trim() || undefined;
+    if (idempotencyKey !== undefined && idempotencyKey.length === 0) {
+      throw new HttpError(400, "Idempotency-Key must not be empty", "VALIDATION_ERROR");
+    }
+
+    const result = await paymentService.recordPayment(c.get("userId"), orderId, parsed.data, idempotencyKey);
     return c.json(result, 201);
   };
 }

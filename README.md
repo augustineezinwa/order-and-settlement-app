@@ -41,4 +41,4 @@ Recording a payment runs in a single database transaction. The order row is lock
 
 If two payments are submitted at the same time, the second transaction blocks until the first commits, then re-checks the remaining balance. That prevents double-spending on the server without extra application-level locks.
 
-This take-home does not implement idempotency keys, distributed locks, or client-side retry policies for optimistic UI conflicts.
+Clients should send an `Idempotency-Key` header on `POST /orders/:id/payments` (for example a UUID generated when the user opens the payment form). Replaying the same key with the same payload returns the original payment instead of creating a duplicate — this covers double-clicks and network retries. Reusing a key with a different order or payload returns `409 IDEMPOTENCY_KEY_REUSED`.

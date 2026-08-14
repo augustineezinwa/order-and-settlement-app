@@ -33,9 +33,10 @@ function createMockAuthService(): AuthService {
   };
 }
 
-const headersFor = (token: string) => ({
+const headersFor = (token: string, extra: Record<string, string> = {}) => ({
   Authorization: `Bearer ${token}`,
   "Content-Type": "application/json",
+  ...extra,
 });
 
 const dbReady = await (async () => {
@@ -235,5 +236,102 @@ describe.skipIf(!dbReady)("payments integration", () => {
     });
     const history = (await historyRes.json()) as { payments: unknown[] };
     expect(history.payments).toHaveLength(1);
+  });
+
+  it("replays duplicate submit when the same Idempotency-Key is sent twice", async () => {
+    const app = createApp({
+      authService: createMockAuthService(),
+      orderService,
+      paymentService,
+    });
+    const order = await createTestOrder(app);
+    const payBody = JSON.stringify({ amountCents: 40_000, paidAt: daysFromToday(0), note: "deposit" });
+    const payHeaders = headersFor("token-user-a", { "Idempotency-Key": "pay-deposit-1" });
+
+    const firstRes = await app.request(`/orders/${order.id}/payments`, {
+      method: "POST",
+      headers: payHeaders,
+      body: payBody,
+    });
+    const secondRes = await app.request(`/orders/${order.id}/payments`, {
+      method: "POST",
+      headers: payHeaders,
+      body: payBody,
+    });
+
+    expect(firstRes.status).toBe(201);
+    expect(secondRes.status).toBe(201);
+
+    const first = (await firstRes.json()) as { payment: { id: string } };
+    const second = (await secondRes.json()) as { payment: { id: string } };
+    expect(second.payment.id).toBe(first.payment.id);
+
+    const historyRes = await app.request(`/orders/${order.id}/payments`, {
+      headers: headersFor("token-user-a"),
+    });
+    const history = (await historyRes.json()) as { payments: unknown[] };
+    expect(history.payments).toHaveLength(1);
+  });
+
+  it("replays concurrent duplicate submits that share an Idempotency-Key", async () => {
+    const app = createApp({
+      authService: createMockAuthService(),
+      orderService,
+      paymentService,
+    });
+    const order = await createTestOrder(app);
+    const payBody = JSON.stringify({ amountCents: 60_000, paidAt: daysFromToday(0) });
+    const payHeaders = headersFor("token-user-a", { "Idempotency-Key": "pay-concurrent-1" });
+    const pay = () =>
+      app.request(`/orders/${order.id}/payments`, {
+        method: "POST",
+        headers: payHeaders,
+        body: payBody,
+      });
+
+    const [first, second] = await Promise.all([pay(), pay()]);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+
+    const firstBody = (await first.json()) as { payment: { id: string } };
+    const secondBody = (await second.json()) as { payment: { id: string } };
+    expect(secondBody.payment.id).toBe(firstBody.payment.id);
+
+    const historyRes = await app.request(`/orders/${order.id}/payments`, {
+      headers: headersFor("token-user-a"),
+    });
+    const history = (await historyRes.json()) as { payments: unknown[] };
+    expect(history.payments).toHaveLength(1);
+  });
+
+  it("rejects reusing an Idempotency-Key with a different payment payload", async () => {
+    const app = createApp({
+      authService: createMockAuthService(),
+      orderService,
+      paymentService,
+    });
+    const order = await createTestOrder(app);
+    const payHeaders = headersFor("token-user-a", { "Idempotency-Key": "pay-conflict-1" });
+
+    const firstRes = await app.request(`/orders/${order.id}/payments`, {
+      method: "POST",
+      headers: payHeaders,
+      body: JSON.stringify({ amountCents: 40_000, paidAt: daysFromToday(0) }),
+    });
+    expect(firstRes.status).toBe(201);
+
+    const secondRes = await app.request(`/orders/${order.id}/payments`, {
+      method: "POST",
+      headers: payHeaders,
+      body: JSON.stringify({ amountCents: 50_000, paidAt: daysFromToday(0) }),
+    });
+    expect(secondRes.status).toBe(409);
+    await expect(secondRes.json()).resolves.toEqual({
+      error: {
+        message: "Idempotency-Key already used with a different payment payload",
+        code: "IDEMPOTENCY_KEY_REUSED",
+      },
+    });
   });
 });

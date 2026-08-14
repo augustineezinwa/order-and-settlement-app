@@ -33,12 +33,89 @@ export type RecordPaymentResult = {
   };
 };
 
+type PaymentRow = typeof payments.$inferSelect;
+type OrderRow = typeof orders.$inferSelect;
+type DbTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+function toPaymentRecord(payment: PaymentRow): PaymentRecord {
+  return {
+    id: payment.id,
+    amountCents: payment.amountCents,
+    paidAt: payment.paidAt,
+    note: payment.note,
+    recordedBy: payment.recordedBy,
+  };
+}
+
+async function sumPaidCents(tx: DbTransaction, orderId: string): Promise<number> {
+  const [paidRow] = await tx
+    .select({
+      paidCents: sql<number>`coalesce(sum(${payments.amountCents}), 0)`.mapWith(Number),
+    })
+    .from(payments)
+    .where(eq(payments.orderId, orderId));
+
+  return paidRow?.paidCents ?? 0;
+}
+
+async function buildRecordPaymentResult(
+  tx: DbTransaction,
+  order: OrderRow,
+  payment: PaymentRow,
+  orderTotalCents: number,
+): Promise<RecordPaymentResult> {
+  const amountPaidCents = await sumPaidCents(tx, order.id);
+
+  return {
+    payment: toPaymentRecord(payment),
+    order: {
+      status: deriveDisplayStatus({
+        dueDate: order.dueDate,
+        totalCents: orderTotalCents,
+        paidCents: amountPaidCents,
+      }),
+      orderTotalCents,
+      amountPaidCents,
+      amountDueCents: computeAmountDue(orderTotalCents, amountPaidCents),
+    },
+  };
+}
+
+function assertIdempotentReplay(existing: PaymentRow, orderId: string, input: RecordPaymentInput) {
+  if (existing.orderId !== orderId) {
+    throw new HttpError(409, "Idempotency-Key already used for a different order", "IDEMPOTENCY_KEY_REUSED");
+  }
+
+  if (existing.amountCents !== input.amountCents || existing.paidAt !== input.paidAt || existing.note !== (input.note ?? null)) {
+    throw new HttpError(
+      409,
+      "Idempotency-Key already used with a different payment payload",
+      "IDEMPOTENCY_KEY_REUSED",
+    );
+  }
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  const codes: string[] = [];
+  if (typeof error === "object" && error !== null && "code" in error) {
+    codes.push(String((error as { code: unknown }).code));
+  }
+  if (typeof error === "object" && error !== null && "cause" in error) {
+    const cause = (error as { cause: unknown }).cause;
+    if (typeof cause === "object" && cause !== null && "code" in cause) {
+      codes.push(String((cause as { code: unknown }).code));
+    }
+  }
+  return codes.includes("23505");
+}
+
 export function createPaymentService(db: Database) {
   return {
     async recordPayment(
       userId: string,
       orderId: string,
       input: RecordPaymentInput,
+      idempotencyKey?: string,
     ): Promise<RecordPaymentResult> {
       return db.transaction(async (tx) => {
         const [order] = await tx
@@ -54,14 +131,19 @@ export function createPaymentService(db: Database) {
         const items = await tx.select().from(orderItems).where(eq(orderItems.orderId, orderId));
         const orderTotalCents = computeOrderTotal(computeSubtotal(items));
 
-        const [paidRow] = await tx
-          .select({
-            paidCents: sql<number>`coalesce(sum(${payments.amountCents}), 0)`.mapWith(Number),
-          })
-          .from(payments)
-          .where(eq(payments.orderId, orderId));
+        if (idempotencyKey) {
+          const [existing] = await tx
+            .select()
+            .from(payments)
+            .where(eq(payments.idempotencyKey, idempotencyKey));
 
-        const currentPaidCents = paidRow?.paidCents ?? 0;
+          if (existing) {
+            assertIdempotentReplay(existing, orderId, input);
+            return buildRecordPaymentResult(tx, order, existing, orderTotalCents);
+          }
+        }
+
+        const currentPaidCents = await sumPaidCents(tx, orderId);
         const amountDueCents = computeAmountDue(orderTotalCents, currentPaidCents);
 
         if (input.amountCents > amountDueCents) {
@@ -73,47 +155,48 @@ export function createPaymentService(db: Database) {
           );
         }
 
-        const [payment] = await tx
-          .insert(payments)
-          .values({
-            orderId,
-            recordedBy: userId,
-            amountCents: input.amountCents,
-            paidAt: input.paidAt,
-            note: input.note,
-          })
-          .returning();
+        try {
+          const [payment] = await tx
+            .insert(payments)
+            .values({
+              orderId,
+              recordedBy: userId,
+              amountCents: input.amountCents,
+              paidAt: input.paidAt,
+              note: input.note,
+              idempotencyKey,
+            })
+            .returning();
 
-        const newPaidCents = currentPaidCents + input.amountCents;
-        const storedStatus = deriveStoredStatus({
-          totalCents: orderTotalCents,
-          paidCents: newPaidCents,
-        });
+          const newPaidCents = currentPaidCents + input.amountCents;
+          const storedStatus = deriveStoredStatus({
+            totalCents: orderTotalCents,
+            paidCents: newPaidCents,
+          });
 
-        await tx
-          .update(orders)
-          .set({ status: storedStatus, updatedAt: new Date() })
-          .where(eq(orders.id, orderId));
+          await tx
+            .update(orders)
+            .set({ status: storedStatus, updatedAt: new Date() })
+            .where(eq(orders.id, orderId));
 
-        return {
-          payment: {
-            id: payment.id,
-            amountCents: payment.amountCents,
-            paidAt: payment.paidAt,
-            note: payment.note,
-            recordedBy: payment.recordedBy,
-          },
-          order: {
-            status: deriveDisplayStatus({
-              dueDate: order.dueDate,
-              totalCents: orderTotalCents,
-              paidCents: newPaidCents,
-            }),
-            orderTotalCents,
-            amountPaidCents: newPaidCents,
-            amountDueCents: computeAmountDue(orderTotalCents, newPaidCents),
-          },
-        };
+          return buildRecordPaymentResult(tx, order, payment, orderTotalCents);
+        } catch (error) {
+          if (!idempotencyKey || !isUniqueViolation(error)) {
+            throw error;
+          }
+
+          const [existing] = await tx
+            .select()
+            .from(payments)
+            .where(eq(payments.idempotencyKey, idempotencyKey));
+
+          if (!existing) {
+            throw error;
+          }
+
+          assertIdempotentReplay(existing, orderId, input);
+          return buildRecordPaymentResult(tx, order, existing, orderTotalCents);
+        }
       });
     },
 
@@ -134,13 +217,7 @@ export function createPaymentService(db: Database) {
         .orderBy(asc(payments.paidAt), asc(payments.createdAt));
 
       return {
-        payments: rows.map((payment) => ({
-          id: payment.id,
-          amountCents: payment.amountCents,
-          paidAt: payment.paidAt,
-          note: payment.note,
-          recordedBy: payment.recordedBy,
-        })),
+        payments: rows.map(toPaymentRecord),
       };
     },
   };
