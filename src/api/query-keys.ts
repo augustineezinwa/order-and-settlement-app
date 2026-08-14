@@ -1,5 +1,9 @@
 import type { OrderStatus } from "@shared/api/types/orders";
 
+export const authKeys = {
+  me: ["auth", "me"] as const,
+};
+
 export const orderKeys = {
   all: ["orders"] as const,
   lists: () => [...orderKeys.all, "list"] as const,

@@ -21,9 +21,11 @@ function mapSignInError(message?: string): HttpError {
 function toSession(
   accessToken: string,
   user: { id: string; email: string },
+  expiresIn?: number,
 ): AuthSession {
   return {
     accessToken,
+    expiresIn,
     user: { id: user.id, email: user.email },
   };
 }
@@ -54,10 +56,11 @@ export function createAuthService(supabase: SupabaseClient, supabaseAdmin: Supab
         );
       }
 
-      return toSession(data.session.access_token, {
-        id: created.user.id,
-        email: created.user.email,
-      });
+      return toSession(
+        data.session.access_token,
+        { id: created.user.id, email: created.user.email },
+        data.session.expires_in,
+      );
     },
 
     async signIn({ email, password }: { email: string; password: string }): Promise<AuthSession> {
@@ -69,10 +72,11 @@ export function createAuthService(supabase: SupabaseClient, supabaseAdmin: Supab
         throw mapSignInError();
       }
 
-      return toSession(data.session.access_token, {
-        id: data.user.id,
-        email: data.user.email,
-      });
+      return toSession(
+        data.session.access_token,
+        { id: data.user.id, email: data.user.email },
+        data.session.expires_in,
+      );
     },
 
     async getUserFromToken(token: string): Promise<AuthUser> {
@@ -82,6 +86,14 @@ export function createAuthService(supabase: SupabaseClient, supabaseAdmin: Supab
       }
 
       return { id: data.user.id, email: data.user.email };
+    },
+
+    /** Best-effort server-side revocation of the token being signed out of. */
+    async signOut(token: string): Promise<void> {
+      await supabaseAdmin.auth.admin.signOut(token, "global").catch(() => {
+        // The cookie is cleared regardless — a revoke failure (e.g. token
+        // already expired) shouldn't block the user from signing out.
+      });
     },
   };
 }

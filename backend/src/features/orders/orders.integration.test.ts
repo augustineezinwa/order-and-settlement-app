@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../app.js";
 import { HttpError } from "../../global/errors.js";
+import { SESSION_COOKIE } from "../../global/sessionCookie.js";
 import { db, sql } from "../../lib/db/index.js";
 import { payments } from "../../lib/db/schema/payments.js";
 import type { AuthService } from "../auth/services/auth.service.js";
@@ -32,11 +33,12 @@ function createMockAuthService(): AuthService {
       }
       throw new HttpError(401, "Invalid or expired token", "UNAUTHORIZED");
     },
+    signOut: async () => {},
   };
 }
 
 const headersFor = (token: string) => ({
-  Authorization: `Bearer ${token}`,
+  Cookie: `${SESSION_COOKIE}=${token}`,
   "Content-Type": "application/json",
 });
 
