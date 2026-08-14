@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 
+import { setSessionCookie } from "../../../global/sessionCookie.js";
 import { throwValidationError } from "../../../global/validation.js";
 import { authCredentialsSchema } from "../schemas/auth.schema.js";
 import type { AuthService } from "../services/auth.service.js";
@@ -12,6 +13,7 @@ export function signInController(authService: AuthService) {
     }
 
     const session = await authService.signIn(parsed.data);
-    return c.json(session);
+    setSessionCookie(c, session.accessToken, session.expiresIn);
+    return c.json({ user: session.user });
   };
 }

@@ -1,40 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 
-import { getSession } from "@/lib/auth/session";
-import { subscribeSession } from "@/lib/auth/session-events";
+import { useMe } from "@/api/auth/queries";
 
-function hasAccessToken(): boolean {
-  return Boolean(getSession()?.accessToken);
-}
-
+/**
+ * Redirects to /sign-in once `/auth/me` confirms there's no session cookie.
+ * Returns false (render nothing yet) until that first check resolves, so we
+ * never flash protected content before the redirect fires.
+ */
 export function useRequireSession(): boolean {
   const router = useRouter();
-
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-
-  const allowed = useSyncExternalStore(
-    subscribeSession,
-    hasAccessToken,
-    () => false,
-  );
+  const { data, isLoading } = useMe();
+  const allowed = !isLoading && Boolean(data);
 
   useEffect(() => {
-    if (!mounted) return;
-    if (!allowed) {
+    if (!isLoading && !data) {
       router.replace("/sign-in");
     }
-  }, [router, allowed, mounted]);
-
-  if (!mounted) {
-    return false;
-  }
+  }, [isLoading, data, router]);
 
   return allowed;
 }

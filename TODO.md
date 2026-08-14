@@ -48,10 +48,10 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 - [x] Status filter control
 - [x] Order detail page — line items + full payment history (with running balance)
 - [x] Dashboard overview — portfolio summary strip + status-mix and amounts-due charts
-- [x] Sign up / sign in pages, wired to `POST /auth/sign-up` and `POST /auth/sign-in` (session in localStorage, nav shows email + sign out)
-- [x] Wire dashboard/detail to live API (currently demo data — see `src/lib/orders/demo-orders.ts`)
+- [x] Sign up / sign in pages, wired to `POST /auth/sign-up` and `POST /auth/sign-in` (httpOnly session cookie; nav shows email + sign out — see README § Auth & sessions)
+- [x] Wire dashboard/detail to live API
 - [x] Create order form (dynamic line items)
-- [x] Record payment form with validation error display (button is present but disabled until wired)
+- [x] Record payment form with validation error display
 
 ## API polish
 

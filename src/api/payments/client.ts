@@ -7,9 +7,7 @@ import type {
 import { apiFetch } from "@/api/client";
 
 export function listPayments(orderId: string): Promise<PaymentRecord[]> {
-  return apiFetch<ListPaymentsResponse>(`/orders/${orderId}/payments`, { auth: true }).then(
-    (res) => res.payments,
-  );
+  return apiFetch<ListPaymentsResponse>(`/orders/${orderId}/payments`).then((res) => res.payments);
 }
 
 export function recordPayment(
@@ -20,7 +18,6 @@ export function recordPayment(
   return apiFetch<RecordPaymentResult>(`/orders/${orderId}/payments`, {
     method: "POST",
     body: input,
-    auth: true,
     headers: { "Idempotency-Key": idempotencyKey },
   });
 }

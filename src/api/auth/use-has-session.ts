@@ -1,14 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMe } from "@/api/auth/queries";
 
-import { getSession } from "@/lib/auth/session";
-import { subscribeSession } from "@/lib/auth/session-events";
-
+/** True once `/auth/me` has confirmed a session cookie is valid. */
 export function useHasSession(): boolean {
-  return useSyncExternalStore(
-    subscribeSession,
-    () => Boolean(getSession()?.accessToken),
-    () => false,
-  );
+  const { data, isLoading } = useMe();
+  return !isLoading && Boolean(data);
 }

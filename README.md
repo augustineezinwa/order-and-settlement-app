@@ -106,13 +106,15 @@ docker compose up --build
 
 ## API overview
 
-All routes require `Authorization: Bearer <accessToken>` except auth endpoints.
+All routes require a signed-in session — an httpOnly `oas_session` cookie set by `/auth/sign-up` or `/auth/sign-in` — except the auth endpoints themselves and `/health`. See [Auth & sessions](#auth--sessions) below.
 
 
 | Method   | Path                   | Description                                   |
 | -------- | ---------------------- | --------------------------------------------- |
-| `POST`   | `/auth/sign-up`        | Create account (email + password)             |
-| `POST`   | `/auth/sign-in`        | Sign in                                       |
+| `POST`   | `/auth/sign-up`        | Create account (email + password); sets the session cookie |
+| `POST`   | `/auth/sign-in`        | Sign in; sets the session cookie              |
+| `POST`   | `/auth/sign-out`       | Clear the session cookie (revokes the token server-side, best-effort) |
+| `GET`    | `/auth/me`             | Current user (`{ userId, email }`); 401 if signed out |
 | `GET`    | `/health`              | Health check                                  |
 | `POST`   | `/orders`              | Create order (customer, due date, line items) |
 | `GET`    | `/orders`              | List orders (`?status=` optional)             |
@@ -132,6 +134,17 @@ All routes require `Authorization: Bearer <accessToken>` except auth endpoints.
 ```
 
 Common codes: `VALIDATION_ERROR`, `UNAUTHORIZED`, `OVERPAYMENT`, `ORDER_NOT_FOUND`, `IDEMPOTENCY_KEY_REUSED`.
+
+## Auth & sessions
+
+Sessions live in an **httpOnly cookie** (`oas_session`), not `localStorage` — the Supabase access token is never exposed to page JavaScript, so it can't be read or exfiltrated by a client-side script.
+
+- `POST /auth/sign-up` and `/auth/sign-in` set the cookie (`httpOnly`, `SameSite=Lax`, `Secure` in production, `path=/`, max-age matched to the Supabase token's `expires_in`) and return `{ user: { id, email } }` in the body — no token in the response.
+- The frontend sends `credentials: "include"` on every API call; the browser attaches the cookie automatically. There is no client-side token to manage.
+- `GET /auth/me` is how the frontend knows whether it's signed in (`useMe()` via TanStack Query) — a 401 just means "signed out." Protected pages (`useRequireSession`) redirect to `/sign-in` when that query comes back empty.
+- `POST /auth/sign-out` clears the cookie and best-effort revokes the token server-side via `supabase.auth.admin.signOut(token, "global")`, so a stolen cookie can't be replayed after the user signs out.
+- Same-origin by design: the browser only ever talks to `/api/*` on its own origin (Next.js proxies to Hono, in dev and in the single-container production deploy — see [ARCHITECTURE.md](ARCHITECTURE.md)), so the cookie needs no cross-site `SameSite=None` handling. The backend's own CORS policy (`CORS_ORIGIN`, `credentials: true`) exists for direct-to-API access (local dev against `:8787`, tests), not for real browser traffic.
+- **Known tradeoff:** `SameSite=Lax` is the CSRF mitigation here — there's no separate CSRF token. That's an acceptable line for this scope; a production app handling higher-value actions would add one (e.g. a double-submit token) on top.
 
 ## Status derivation
 
@@ -173,7 +186,7 @@ Replaying the same `Idempotency-Key` with the same payload returns the original 
 ## Assumptions and tradeoffs
 
 - **Single-container deploy** — Next.js and Hono share one Render service; simpler URL, both processes restart together.
-- **Session in localStorage** — not httpOnly cookies; acceptable for a take-home demo.
+- **Session in an httpOnly cookie, `SameSite=Lax` as the only CSRF mitigation** — no separate CSRF token; see [Auth & sessions](#auth--sessions).
 - **Derived overdue** — `overdue` is computed at read time; stored status history covers payment-driven transitions only.
 - **Supabase** — managed Postgres + Auth; no self-hosted DB.
 - **No tax, discounts, or multi-currency.**

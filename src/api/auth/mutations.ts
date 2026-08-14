@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { signIn, signUp } from "@/api/auth/client";
-import { orderKeys } from "@/api/query-keys";
-import { saveSession } from "@/lib/auth/session";
+import { signIn, signOut, signUp } from "@/api/auth/client";
+import { authKeys, orderKeys } from "@/api/query-keys";
 
 export function useSignIn() {
   const router = useRouter();
@@ -12,8 +11,8 @@ export function useSignIn() {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       signIn(email, password),
-    onSuccess: (session) => {
-      saveSession(session);
+    onSuccess: ({ user }) => {
+      queryClient.setQueryData(authKeys.me, { userId: user.id, email: user.email });
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
       router.push("/dashboard");
     },
@@ -27,10 +26,26 @@ export function useSignUp() {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       signUp(email, password),
-    onSuccess: (session) => {
-      saveSession(session);
+    onSuccess: ({ user }) => {
+      queryClient.setQueryData(authKeys.me, { userId: user.id, email: user.email });
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
       router.push("/dashboard");
+    },
+  });
+}
+
+export function useSignOut() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: signOut,
+    onSuccess: () => {
+      queryClient.setQueryData(authKeys.me, null);
+      queryClient.removeQueries({ queryKey: orderKeys.all });
+      // No explicit redirect here — the sign-out control only appears on
+      // protected pages (DashboardShell), and useRequireSession there
+      // reacts to authKeys.me going empty and sends the visitor to
+      // /sign-in on its own. A second, racing push("/") isn't needed.
     },
   });
 }

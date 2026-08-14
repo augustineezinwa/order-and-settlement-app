@@ -1,26 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSyncExternalStore } from "react";
 
-import { clearSession, getSession } from "@/lib/auth/session";
-import { subscribeSession } from "@/lib/auth/session-events";
-
-function getSnapshot(): string | null {
-  return getSession()?.user.email ?? null;
-}
-
-function getServerSnapshot(): string | null {
-  return null;
-}
+import { useMe } from "@/api/auth/queries";
+import { useSignOut } from "@/api/auth/mutations";
 
 /** Sign-in link when signed out; email + sign-out when a session exists. */
 export function AccountMenu() {
-  const router = useRouter();
-  const email = useSyncExternalStore(subscribeSession, getSnapshot, getServerSnapshot);
+  const { data, isLoading } = useMe();
+  const signOut = useSignOut();
 
-  if (!email) {
+  if (isLoading) {
+    return <span className="h-7 w-16" aria-hidden="true" />;
+  }
+
+  if (!data) {
     return (
       <Link
         href="/sign-in"
@@ -33,16 +27,14 @@ export function AccountMenu() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{email}</span>
+      <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{data.email}</span>
       <button
         type="button"
-        onClick={() => {
-          clearSession();
-          router.push("/");
-        }}
-        className="inline-flex h-7 items-center justify-center rounded-full border border-border px-3 text-sm font-medium hover:bg-muted"
+        onClick={() => signOut.mutate()}
+        disabled={signOut.isPending}
+        className="inline-flex h-7 items-center justify-center rounded-full border border-border px-3 text-sm font-medium hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
       >
-        Sign out
+        {signOut.isPending ? "Signing out…" : "Sign out"}
       </button>
     </div>
   );

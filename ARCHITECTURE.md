@@ -36,11 +36,10 @@ flowchart TB
 
   browser -->|"HTTPS · pages + /api/*"| next
   hono -->|"SQL via Drizzle"| db
-  hono -->|"sign-up / token verify"| auth
-  browser -->|"sign-in direct"| auth
+  hono -->|"sign-up / sign-in / token verify"| auth
 ```
 
-The browser never talks to Hono directly in production. All API calls go to `/api/...` on the same origin; Next.js rewrites those requests to the in-container Hono process.
+The browser never talks to Hono or Supabase directly in production. All API calls — including sign-up and sign-in — go to `/api/...` on the same origin; Next.js rewrites those requests to the in-container Hono process, which is the only thing that talks to Supabase.
 
 ## Production runtime
 
@@ -140,7 +139,7 @@ flowchart TB
 
 | Feature | Endpoints (prefix `/orders` or `/auth`) | Notes |
 | ------- | --------------------------------------- | ----- |
-| Auth | `POST /auth/sign-up`, `sign-in`, `GET /auth/me` | Supabase JWT → `userId` on context |
+| Auth | `POST /auth/sign-up`, `sign-in`, `sign-out`, `GET /auth/me` | Supabase JWT in an httpOnly cookie → `userId`/`userEmail` on context |
 | Orders | CRUD, list, export CSV, status history | Scoped by `userId` |
 | Payments | `POST/GET …/:id/payments` | Row lock, idempotency key, overpayment guard |
 
@@ -148,24 +147,28 @@ flowchart TB
 
 ```mermaid
 flowchart TB
+  subgraph browser [Browser]
+    cookie[("httpOnly cookie<br/>oas_session")]
+  end
+
   subgraph next_app [Next.js App Router]
     pages[["Pages<br/>/ · /dashboard · /orders/* · /sign-in"]]
-    rq[["TanStack Query<br/>useOrders · useOrder · mutations"]]
-    session[("localStorage session<br/>accessToken")]
+    rq[["TanStack Query<br/>useMe · useOrders · useOrder · mutations"]]
     pages --> rq
-    rq --> session
   end
 
   api_proxy["/api/* rewrite"]
-  rq -->|"fetch /api/…"| api_proxy
+  rq -->|"fetch, credentials: include"| api_proxy
   api_proxy --> hono_backend{{Hono API}}
+  hono_backend -.->|"Set-Cookie on sign-up/in/out"| cookie
+  cookie -.->|"attached automatically"| api_proxy
 
   shared[["shared/api<br/>Zod schemas + types"]]
   pages -.-> shared
   hono_backend -.-> shared
 ```
 
-Auth tokens are stored in `localStorage` and sent as `Authorization: Bearer …` on API calls. Protected pages use `useRequireSession`; the landing page uses `useHasSession` for conditional CTAs only.
+The session token never reaches page JavaScript — it lives only in an httpOnly cookie the browser attaches to every `/api/*` request. The frontend asks `GET /auth/me` (via `useMe`) to know whether it's signed in rather than reading a token itself. Protected pages use `useRequireSession` (redirects to `/sign-in` when `useMe` comes back empty); the landing page uses `useHasSession` for conditional CTAs only. See [README.md § Auth & sessions](README.md#auth--sessions) for the cookie's exact attributes and the CSRF tradeoff.
 
 ## Data model and status
 
