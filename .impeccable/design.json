@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T10:30:00.000Z",
+  "title": "Design System: Orders & Settlements",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#0a0a0a", "#171717", "#404040", "#737373", "#a3a3a3", "#d4d4d4", "#e5e5e5", "#ffffff"]
+      },
+      "foreground": {
+        "role": "primary",
+        "displayName": "Ledger Ink",
+        "canonical": "#171717",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#525252", "#737373", "#a3a3a3", "#ededed"]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Ledger Wash",
+        "canonical": "#fafafa",
+        "tonalRamp": ["#0a0a0a", "#171717", "#262626", "#404040", "#525252", "#737373", "#a3a3a3", "#fafafa"]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#52525b",
+        "tonalRamp": ["#18181b", "#27272a", "#3f3f46", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#fafafa"]
+      },
+      "border-subtle": {
+        "role": "neutral",
+        "displayName": "Hairline Rule",
+        "canonical": "rgba(0, 0, 0, 0.08)",
+        "tonalRamp": ["rgba(0,0,0,0.02)", "rgba(0,0,0,0.04)", "rgba(0,0,0,0.06)", "rgba(0,0,0,0.08)", "rgba(0,0,0,0.12)", "rgba(0,0,0,0.16)", "rgba(0,0,0,0.24)", "rgba(0,0,0,0.32)"]
+      },
+      "code-surface": {
+        "role": "neutral",
+        "displayName": "Code Wash",
+        "canonical": "rgba(0, 0, 0, 0.06)",
+        "tonalRamp": ["rgba(0,0,0,0.02)", "rgba(0,0,0,0.04)", "rgba(0,0,0,0.06)", "rgba(0,0,0,0.08)", "rgba(0,0,0,0.12)", "rgba(0,0,0,0.16)", "rgba(0,0,0,0.24)", "rgba(0,0,0,0.32)"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles and primary section headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanatory copy, form helper text, table cell prose."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, table headers, filter controls."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Currency amounts, order IDs, inline code."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-colors",
+        "value": "color 150ms ease, background-color 150ms ease, border-color 150ms ease",
+        "purpose": "Button and link hover transitions observed on starter CTAs."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main call-to-action; one per viewport region.",
+      "html": "<button class=\"ds-btn-primary\">Record payment</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 3rem; padding: 0 1.25rem; background: #171717; color: #ffffff; font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif); font-size: 1rem; font-weight: 500; border: none; border-radius: 9999px; cursor: pointer; transition: background 150ms ease, color 150ms ease; } .ds-btn-primary:hover { background: #383838; } .ds-btn-primary:focus-visible { outline: 2px solid #171717; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary actions alongside a primary pill.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 3rem; padding: 0 1.25rem; background: transparent; color: #171717; font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif); font-size: 1rem; font-weight: 500; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 9999px; cursor: pointer; transition: background 150ms ease, border-color 150ms ease; } .ds-btn-secondary:hover { background: rgba(0, 0, 0, 0.04); } .ds-btn-secondary:focus-visible { outline: 2px solid #171717; outline-offset: 2px; }"
+    },
+    {
+      "name": "Inline Code",
+      "kind": "custom",
+      "refersTo": "code-inline",
+      "description": "Field keys, paths, and technical literals—not currency in production tables.",
+      "html": "<code class=\"ds-code-inline\">page.tsx</code>",
+      "css": ".ds-code-inline { display: inline; padding: 0.125rem 0.375rem; background: rgba(0, 0, 0, 0.06); border-radius: 0.25rem; font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.9em; font-weight: 400; color: #171717; }"
+    },
+    {
+      "name": "Page Shell",
+      "kind": "custom",
+      "description": "Centered operator column on a muted page wash.",
+      "html": "<div class=\"ds-page-shell\"><main class=\"ds-page-main\"><h1 class=\"ds-page-title\">Orders</h1><p class=\"ds-page-lead\">Track customer orders and settlement progress.</p></main></div>",
+      "css": ".ds-page-shell { min-height: 100%; background: #fafafa; font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif); color: #171717; } .ds-page-main { max-width: 48rem; margin: 0 auto; padding: 2rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; } .ds-page-title { font-size: 1.875rem; font-weight: 600; line-height: 1.11; letter-spacing: -0.025em; margin: 0; } .ds-page-lead { font-size: 1.125rem; line-height: 1.78; color: #52525b; margin: 0; max-width: 42rem; }"
+    },
+    {
+      "name": "Status Badge Placeholder",
+      "kind": "chip",
+      "description": "Monochrome badge shell; semantic color fills added when status UI ships.",
+      "html": "<span class=\"ds-badge\">partially paid</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.625rem; background: rgba(0, 0, 0, 0.06); color: #171717; font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; text-transform: lowercase; border-radius: 0.25rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clean Ledger",
+    "overview": "Orders & Settlements reads like a well-kept ledger: neutral, legible, and free of decoration that competes with numbers. The incumbent Next.js starter establishes a monochrome zinc-and-ink foundation—white or near-black surfaces, Geist typography, flat planes, and pill-shaped actions. Future dashboard screens inherit this restraint so status, amounts due, and due dates scan instantly.\n\nDensity stays generous at the page level (wide vertical rhythm, clear section gaps) while data tables and forms can tighten locally without breaking the calm shell. Expression lives in precision—alignment, hierarchy, and whitespace—not in gradients, shadows, or marketing flair.",
+    "keyCharacteristics": [
+      "Monochrome first; semantic status color is added only where a label must pop",
+      "Flat surfaces; depth conveyed through background steps, not shadows",
+      "Pill buttons and soft inline-code chips as the primary interactive shapes",
+      "Geist Sans for UI copy; Geist Mono for amounts, IDs, and code",
+      "Light/dark parity via prefers-color-scheme, not a manual theme toggle (for now)"
+    ],
+    "rules": [
+      {
+        "name": "The Monochrome First Rule",
+        "body": "The base UI stays achromatic. Status hues (overdue, paid, etc.) appear only on badges and alerts—not on buttons, nav, or page chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Surface Step Rule",
+        "body": "Use at most one background step between page (Ledger Wash) and content panel (Paper White). Avoid nested gray boxes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers in Mono Rule",
+        "body": "Currency, IDs, and dates in data-dense views use Geist Mono at body or label size so figures align and scan separately from prose.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Shadows are not part of this system. If depth is needed later, use border or background step—not box-shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep pages achromatic until a semantic badge requires color (status, error, success).",
+      "Do use Geist Mono for tabular numbers, order IDs, and cent amounts.",
+      "Do preserve generous whitespace on list and detail page headers; tighten density inside tables only.",
+      "Do use pill buttons for primary page actions (Create order, Record payment).",
+      "Do respect prefers-color-scheme dark palette already defined in globals.css."
+    ],
+    "donts": [
+      "Don't add box shadows, gradients, or glassmorphism—this system is flat ledger craft.",
+      "Don't use the Next.js / Vercel marketing template layout (hero CTAs, deploy buttons) on operator dashboard routes.",
+      "Don't introduce a second accent color family beyond future status semantics.",
+      "Don't center-align data tables or form labels—operator tools align start for scannability.",
+      "Don't fabricate brand imagery or logos; use the product name typographically until assets exist."
+    ]
+  }
+}

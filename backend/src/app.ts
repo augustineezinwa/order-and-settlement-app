@@ -5,6 +5,7 @@ import { createAuthService } from "./features/auth/services/auth.service.js";
 import { createOrderRoutes } from "./features/orders/routes.js";
 import { createOrderService } from "./features/orders/services/order.service.js";
 import { createPaymentService } from "./features/payments/services/payment.service.js";
+import { corsMiddleware } from "./global/middlewares/cors.js";
 import { errorHandler } from "./global/middlewares/errorHandler.js";
 import { requestLogger } from "./global/middlewares/requestLogger.js";
 import { db } from "./lib/db/index.js";
@@ -26,6 +27,7 @@ export function createApp(deps: CreateAppDeps = {}) {
   const app = new Hono<AppEnv>();
 
   app.use(requestLogger);
+  app.use(corsMiddleware);
   app.onError(errorHandler);
 
   app.get("/health", (c) => c.json({ status: "ok" }));

@@ -15,6 +15,7 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: z.string().min(1),
     PORT: z.coerce.number().int().positive().default(8787),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    CORS_ORIGIN: z.url().default("http://localhost:3000"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
