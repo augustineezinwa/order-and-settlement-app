@@ -1,9 +1,12 @@
-import type { AuthSession } from "@/lib/auth/api";
+import type { AuthSession } from "@shared/api/types/auth";
+
+import { notifySessionChange } from "@/lib/auth/session-events";
 
 const STORAGE_KEY = "oas_session";
 
 export function saveSession(session: AuthSession): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  notifySessionChange();
 }
 
 export function getSession(): AuthSession | null {
@@ -19,4 +22,5 @@ export function getSession(): AuthSession | null {
 
 export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEY);
+  notifySessionChange();
 }

@@ -1,3 +1,4 @@
+import type { OrderDetail, OrderSummary, OrderStatus } from "@shared/api/types/orders.js";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { HttpError } from "../../../global/errors.js";
@@ -5,38 +6,14 @@ import type { Database } from "../../../lib/db/index.js";
 import { orderItems, orders } from "../../../lib/db/schema/orders.js";
 import { payments } from "../../../lib/db/schema/payments.js";
 import type { CreateOrderInput, UpdateOrderInput } from "../schemas/order.schema.js";
-import { deriveDisplayStatus, type DisplayOrderStatus } from "./orderStatus.service.js";
+import { deriveDisplayStatus } from "./orderStatus.service.js";
 import {
   computeAmountDue,
   computeOrderTotal,
   computeSubtotal,
 } from "./orderTotals.service.js";
 
-export type OrderSummary = {
-  id: string;
-  customerName: string;
-  dueDate: string;
-  status: DisplayOrderStatus;
-  orderTotalCents: number;
-  amountPaidCents: number;
-  amountDueCents: number;
-};
-
-export type OrderDetail = OrderSummary & {
-  lineItems: Array<{
-    id: string;
-    description: string;
-    quantity: number;
-    unitPriceCents: number;
-  }>;
-  payments: Array<{
-    id: string;
-    amountCents: number;
-    paidAt: string;
-    note: string | null;
-    recordedBy: string;
-  }>;
-};
+export type { OrderDetail, OrderSummary };
 
 function mapOrderSummary(input: {
   id: string;
@@ -141,7 +118,7 @@ export function createOrderService(db: Database) {
 
     async listOrders(
       userId: string,
-      filter?: { status?: DisplayOrderStatus },
+      filter?: { status?: OrderStatus },
     ): Promise<OrderSummary[]> {
       const userOrders = await db.select().from(orders).where(eq(orders.userId, userId));
       const orderIds = userOrders.map((order) => order.id);

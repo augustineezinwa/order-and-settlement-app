@@ -1,8 +1,5 @@
-import { notFound } from "next/navigation";
-
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { OrderDetailView } from "@/components/dashboard/order-detail";
-import { getOrderDetail } from "@/lib/orders/demo-order-detail";
+import { OrderDetailPageClient } from "@/components/dashboard/order-detail-page-client";
 
 export default async function OrderDetailPage({
   params,
@@ -10,13 +7,10 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = getOrderDetail(id);
-
-  if (!order) notFound();
 
   return (
     <DashboardShell>
-      <OrderDetailView order={order} />
+      <OrderDetailPageClient id={id} />
     </DashboardShell>
   );
 }

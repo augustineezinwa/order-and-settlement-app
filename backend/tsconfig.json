@@ -11,8 +11,11 @@
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "../shared/api/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

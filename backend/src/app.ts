@@ -9,7 +9,7 @@ import { corsMiddleware } from "./global/middlewares/cors.js";
 import { errorHandler } from "./global/middlewares/errorHandler.js";
 import { requestLogger } from "./global/middlewares/requestLogger.js";
 import { db } from "./lib/db/index.js";
-import { supabase } from "./lib/supabase/client.js";
+import { supabaseAdmin, supabaseAuth } from "./lib/supabase/client.js";
 import type { AppEnv } from "./types/appEnv.js";
 
 export type { AppEnv } from "./types/appEnv.js";
@@ -21,7 +21,7 @@ export type CreateAppDeps = {
 };
 
 export function createApp(deps: CreateAppDeps = {}) {
-  const authService = deps.authService ?? createAuthService(supabase);
+  const authService = deps.authService ?? createAuthService(supabaseAuth, supabaseAdmin);
   const orderService = deps.orderService ?? createOrderService(db);
   const paymentService = deps.paymentService ?? createPaymentService(db);
   const app = new Hono<AppEnv>();

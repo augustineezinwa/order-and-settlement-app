@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 import { clearSession, getSession } from "@/lib/auth/session";
-
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
+import { subscribeSession } from "@/lib/auth/session-events";
 
 function getSnapshot(): string | null {
   return getSession()?.user.email ?? null;
@@ -22,10 +18,7 @@ function getServerSnapshot(): string | null {
 /** Sign-in link when signed out; email + sign-out when a session exists. */
 export function AccountMenu() {
   const router = useRouter();
-  // localStorage is client-only, so the server and first client render both
-  // show "signed out" — useSyncExternalStore keeps that hydration-safe
-  // without a setState-in-effect render flash.
-  const email = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const email = useSyncExternalStore(subscribeSession, getSnapshot, getServerSnapshot);
 
   if (!email) {
     return (

@@ -12,7 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatUsd } from "@/lib/money";
-import { lineTotalCents, type OrderDetail } from "@/lib/orders/demo-order-detail";
+import { lineTotalCents } from "@/lib/orders/line-item";
+import type { OrderDetail } from "@/lib/orders/types";
 
 export function OrderDetailView({ order }: { order: OrderDetail }) {
   const isReadOnly = order.payments.length > 0;
@@ -53,7 +54,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
             <button
               type="button"
               disabled
-              title="Demo data — record payment isn't wired to the API yet"
+              title="Record payment form coming soon"
               className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground opacity-60"
             >
               Record payment
@@ -148,7 +149,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
               {paymentsWithBalance.map(({ payment, balanceAfterCents }) => (
                 <TableRow key={payment.id}>
                   <TableCell className="px-4 font-mono tabular-nums text-muted-foreground">
-                    {payment.date}
+                    {payment.paidAt}
                   </TableCell>
                   <TableCell className="font-mono tabular-nums">
                     {formatUsd(payment.amountCents)}
@@ -163,10 +164,6 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </Table>
         )}
       </section>
-
-      <p className="font-mono text-xs text-muted-foreground">
-        Demo data · connect GET /orders/:id and POST /orders/:id/payments after sign-in
-      </p>
     </div>
   );
 }

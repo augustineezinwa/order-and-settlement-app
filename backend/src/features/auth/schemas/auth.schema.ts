@@ -1,8 +1,4 @@
-import { z } from "zod";
+import type { AuthCredentials } from "@shared/api/schemas/auth.schema.js";
 
-export const authCredentialsSchema = z.object({
-  email: z.email(),
-  password: z.string().min(8),
-});
-
-export type AuthCredentials = z.infer<typeof authCredentialsSchema>;
+export type { AuthCredentials };
+export { authCredentialsSchema } from "@shared/api/schemas/auth.schema.js";

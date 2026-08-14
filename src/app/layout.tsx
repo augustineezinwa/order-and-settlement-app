@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { QueryProvider } from "@/api/provider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -34,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           FORM: Drum machine step row composition (concept-seed reroll 1, index 3).
           FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
         */}
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );
