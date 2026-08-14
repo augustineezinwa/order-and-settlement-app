@@ -8,6 +8,20 @@
       "when": 1786672562467,
       "tag": "0000_overrated_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786694252118,
+      "tag": "0001_mysterious_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786694270386,
+      "tag": "0002_audit_triggers",
+      "breakpoints": true
     }
   ]
 }
