@@ -23,6 +23,7 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NODE_PATH=/app/backend/node_modules
 
 COPY --from=backend-deps /app/backend ./backend
 COPY --from=backend-deps /app/shared ./shared

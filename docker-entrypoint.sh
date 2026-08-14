@@ -4,6 +4,8 @@ set -e
 cd /app/backend
 npm run db:migrate
 
+# shared/ lives outside backend/ but imports zod from backend deps
+export NODE_PATH=/app/backend/node_modules
 PORT=8787 npx tsx src/index.ts &
 API_PID=$!
 
