@@ -14,6 +14,8 @@ Order tracking and payment ledger for a small business operator. Create orders w
 
 See **[ARCHITECTURE.md](ARCHITECTURE.md)** for diagrams (system context, request flow, backend/frontend layout, data model) and stack details.
 
+Pull requests run backend tests (with Postgres), lint, and a production build via [GitHub Actions](.github/workflows/ci.yml).
+
 Single Docker container on Render:
 
 - **Next.js** listens on the public `PORT` (serves the dashboard)

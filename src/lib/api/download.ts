@@ -1,4 +1,3 @@
-import type { OrderStatusHistoryResponse } from "@shared/api/types/orders";
 import { API_BASE_URL } from "@/lib/env";
 import { getSession } from "@/lib/auth/session";
 import { ApiError } from "@/api/client";
