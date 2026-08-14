@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.0",
+    "@t3-oss/env-core": "^0.13.11",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.2",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

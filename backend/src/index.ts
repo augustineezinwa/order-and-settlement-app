@@ -1,9 +1,8 @@
 import { serve } from "@hono/node-server";
 
 import { app } from "./app.js";
+import { env } from "./settings/env.js";
 
-const port = Number(process.env.PORT ?? 8787);
-
-serve({ fetch: app.fetch, port }, (info) => {
+serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   console.log(`backend listening on http://localhost:${info.port}`);
 });
