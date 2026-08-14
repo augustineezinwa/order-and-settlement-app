@@ -9,6 +9,7 @@ import { useOrders } from "@/api/orders/queries";
 import { ApiError } from "@/api/client";
 import { AmountsDueChart } from "@/components/dashboard/amounts-due-chart";
 import { LedgerSummary } from "@/components/dashboard/ledger-summary";
+import { OrdersExportPanel } from "@/components/dashboard/orders-export-panel";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { StatusCompositionChart } from "@/components/dashboard/status-composition-chart";
 import { Input } from "@/components/ui/input";
@@ -144,6 +145,8 @@ export function OrdersDashboard() {
           <AmountsDueChart orders={orders} />
         </div>
       </div>
+
+      <OrdersExportPanel />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">

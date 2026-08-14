@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useHasSession } from "@/api/auth/use-has-session";
 import { MechanicalReadout } from "@/components/landing/mechanical-readout";
 import { SettlementStates } from "@/components/landing/settlement-states";
 import { TapeFeed } from "@/components/landing/tape-feed";
@@ -33,6 +34,7 @@ const mechanisms = [
 
 export function LandingPage() {
   const [step, setStep] = useState(0);
+  const hasSession = useHasSession();
 
   useEffect(() => {
     // Reduced-motion visitors get the static first frame — no cycling, no
@@ -82,15 +84,26 @@ export function LandingPage() {
             Orders &amp; Settlements
           </span>
           <div className="flex items-center gap-3">
-            <Link href="/sign-in" className="font-sans text-sm text-[var(--tape-muted)] hover:text-[var(--tape-ink)]">
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className={`${oswald.className} key-press inline-flex h-10 items-center justify-center rounded-[3px] bg-[var(--tape-ink)] px-5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tape-paper)] shadow-[0_2px_0_var(--tape-edge)] transition-transform`}
-            >
-              Get started
-            </Link>
+            {!hasSession && (
+              <Link href="/sign-in" className="font-sans text-sm text-[var(--tape-muted)] hover:text-[var(--tape-ink)]">
+                Sign in
+              </Link>
+            )}
+            {hasSession ? (
+              <Link
+                href="/dashboard"
+                className={`${oswald.className} key-press inline-flex h-10 items-center justify-center rounded-[3px] bg-[var(--tape-ink)] px-5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tape-paper)] shadow-[0_2px_0_var(--tape-edge)] transition-transform`}
+              >
+                Open dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/sign-up"
+                className={`${oswald.className} key-press inline-flex h-10 items-center justify-center rounded-[3px] bg-[var(--tape-ink)] px-5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--tape-paper)] shadow-[0_2px_0_var(--tape-edge)] transition-transform`}
+              >
+                Get started
+              </Link>
+            )}
           </div>
         </div>
       </header>

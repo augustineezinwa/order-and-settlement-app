@@ -6,6 +6,8 @@ export const orderKeys = {
   list: (status?: OrderStatus) => [...orderKeys.lists(), { status }] as const,
   details: () => [...orderKeys.all, "detail"] as const,
   detail: (id: string) => [...orderKeys.details(), id] as const,
+  statusHistories: () => [...orderKeys.all, "status-history"] as const,
+  statusHistory: (id: string) => [...orderKeys.statusHistories(), id] as const,
 };
 
 export const paymentKeys = {

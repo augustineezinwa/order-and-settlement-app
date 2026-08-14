@@ -6,6 +6,7 @@ import type {
   ListOrdersResponse,
   OrderDetail,
   OrderStatus,
+  OrderStatusHistoryResponse,
   OrderSummary,
 } from "@shared/api/types/orders";
 import { apiFetch } from "@/api/client";
@@ -13,6 +14,12 @@ import { apiFetch } from "@/api/client";
 export function listOrders(status?: OrderStatus): Promise<OrderSummary[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return apiFetch<ListOrdersResponse>(`/orders${query}`, { auth: true }).then((res) => res.orders);
+}
+
+export function listOrderStatusHistory(orderId: string) {
+  return apiFetch<OrderStatusHistoryResponse>(`/orders/${orderId}/status-history`, { auth: true }).then(
+    (res) => res.history,
+  );
 }
 
 export function getOrder(id: string): Promise<OrderDetail> {
