@@ -1,0 +1,45 @@
+{
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "0.8125rem",
+        "createdAt": "2026-08-14T11:46:05.029Z",
+        "reason": "receipt-tape landing redesign replaces the old type ramp for this Persuade surface; new world's own scale isn't in the old DESIGN.md yet, will be recorded at finish"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(179,36,28,0.16)",
+        "createdAt": "2026-08-14T11:47:04.648Z",
+        "reason": "receipt-tape redesign's own committed palette (oxblood tape-accent strike flash); new world, not yet folded into DESIGN.md until a direction is chosen at finish"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#9c3a2e",
+        "createdAt": "2026-08-14T11:50:47.901Z",
+        "reason": "certificate landing redesign's own wax-seal oxblood palette; new world, reconciled in DESIGN.md at finish"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#6d1f16",
+        "createdAt": "2026-08-14T11:50:47.958Z",
+        "reason": "certificate landing redesign's own wax-seal oxblood palette; new world, reconciled in DESIGN.md at finish"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "0.6875rem",
+        "createdAt": "2026-08-14T11:50:48.020Z",
+        "reason": "certificate landing redesign's own type scale (seal caption); new world, reconciled in DESIGN.md at finish"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "0.95rem",
+        "createdAt": "2026-08-14T11:52:04.837Z",
+        "reason": "certificate landing redesign's own type scale (mechanism body copy); new world, reconciled in DESIGN.md at finish"
+      }
+    ]
+  }
+}
