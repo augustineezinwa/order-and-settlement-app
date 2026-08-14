@@ -26,3 +26,18 @@ export function deriveDisplayStatus(input: {
 
   return "pending";
 }
+
+export function deriveStoredStatus(input: {
+  totalCents: number;
+  paidCents: number;
+}): Exclude<StoredOrderStatus, "overdue"> {
+  if (input.paidCents >= input.totalCents) {
+    return "paid";
+  }
+
+  if (input.paidCents > 0) {
+    return "partially_paid";
+  }
+
+  return "pending";
+}

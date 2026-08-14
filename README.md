@@ -34,3 +34,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Payment concurrency
+
+Recording a payment runs in a single database transaction. The order row is locked with `SELECT ... FOR UPDATE` before checking the amount due and inserting the payment.
+
+If two payments are submitted at the same time, the second transaction blocks until the first commits, then re-checks the remaining balance. That prevents double-spending on the server without extra application-level locks.
+
+This take-home does not implement idempotency keys, distributed locks, or client-side retry policies for optimistic UI conflicts.

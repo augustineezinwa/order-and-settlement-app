@@ -6,7 +6,13 @@ import { HttpError } from "../errors.js";
 export const errorHandler: ErrorHandler = (err, c) => {
   if (err instanceof HttpError) {
     return c.json(
-      { error: { message: err.message, ...(err.code ? { code: err.code } : {}) } },
+      {
+        error: {
+          message: err.message,
+          ...(err.code ? { code: err.code } : {}),
+          ...(err.details ? { details: err.details } : {}),
+        },
+      },
       err.status as ContentfulStatusCode,
     );
   }
