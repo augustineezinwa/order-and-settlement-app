@@ -51,7 +51,7 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 - [x] Sign up / sign in pages, wired to `POST /auth/sign-up` and `POST /auth/sign-in` (session in localStorage, nav shows email + sign out)
 - [x] Wire dashboard/detail to live API (currently demo data — see `src/lib/orders/demo-orders.ts`)
 - [x] Create order form (dynamic line items)
-- [ ] Record payment form with validation error display (button is present but disabled until wired)
+- [x] Record payment form with validation error display (button is present but disabled until wired)
 
 ## API polish
 

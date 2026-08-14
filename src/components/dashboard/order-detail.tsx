@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { LedgerSummary } from "@/components/dashboard/ledger-summary";
+import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
+import { RecordPaymentForm } from "@/components/dashboard/record-payment-form";
 import {
   Table,
   TableBody,
@@ -50,16 +51,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {order.amountDueCents > 0 && (
-            <button
-              type="button"
-              disabled
-              title="Record payment form coming soon"
-              className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground opacity-60"
-            >
-              Record payment
-            </button>
-          )}
+          <RecordPaymentForm orderId={order.id} amountDueCents={order.amountDueCents} />
         </div>
       </div>
 
