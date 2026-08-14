@@ -55,9 +55,9 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 
 ## API polish
 
-- [ ] Consistent error response shape across all routes
+- [x] Consistent error response shape across all routes
 - [ ] Validation errors include actionable/resolution hints
-- [ ] No single entry-point file for routes — mount per-feature routers
+- [x] No single entry-point file for routes — mount per-feature routers
 
 ## Stretch goals (optional)
 
@@ -67,10 +67,10 @@ Structure follows [AGENTS.md](./AGENTS.md): feature-based routes/controllers/mid
 
 ## Deployment & docs
 
-- [ ] Deploy to Render (Docker) — get live URL
-- [ ] README: prerequisites + setup steps
-- [ ] README: API overview (main endpoints)
-- [ ] README: status derivation rules + edge-case decisions
-- [ ] README: assumptions/tradeoffs, what to improve before production
+- [x] Deploy to Render (Docker) — get live URL
+- [x] README: prerequisites + setup steps
+- [x] README: API overview (main endpoints)
+- [x] README: status derivation rules + edge-case decisions
+- [x] README: assumptions/tradeoffs, what to improve before production
 - [ ] README: include deployed URL
 - [ ] Optional: short Loom walkthrough
