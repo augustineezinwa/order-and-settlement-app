@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 
 import { HttpError } from "../../../global/errors.js";
+import { throwValidationError } from "../../../global/validation.js";
 import type { AppEnv } from "../../../types/appEnv.js";
 import { recordPaymentSchema } from "../schemas/payment.schema.js";
 import type { PaymentService } from "../services/payment.service.js";
@@ -14,7 +15,7 @@ export function recordPaymentController(paymentService: PaymentService) {
 
     const parsed = recordPaymentSchema.safeParse(await c.req.json());
     if (!parsed.success) {
-      throw new HttpError(400, parsed.error.issues[0]?.message ?? "Invalid request body", "VALIDATION_ERROR");
+      throwValidationError(parsed.error, "Invalid request body");
     }
 
     const idempotencyKey = c.req.header("Idempotency-Key")?.trim() || undefined;

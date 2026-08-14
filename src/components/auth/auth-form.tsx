@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import { useSignIn, useSignUp } from "@/api/auth/mutations";
 import { ApiError } from "@/api/client";
+import { useSignIn, useSignUp } from "@/api/auth/mutations";
 import { Input } from "@/components/ui/input";
+import { fieldErrorsFromDetails, mapAuthFieldErrors } from "@/lib/api/field-errors";
 import { cn } from "@/lib/utils";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { authCredentialsSchema } from "@shared/api/schemas/auth.schema";
+import { formatZodError } from "@shared/api/validation";
 
 type Mode = "sign-up" | "sign-in";
 
@@ -41,21 +42,35 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; form?: string }>({});
 
   function validate(): boolean {
-    const next: typeof fieldErrors = {};
-    if (!EMAIL_PATTERN.test(email)) next.email = "Enter a valid email address.";
-    if (password.length < 8) next.password = "Password must be at least 8 characters.";
-    setFieldErrors(next);
-    return Object.keys(next).length === 0;
+    const parsed = authCredentialsSchema.safeParse({ email, password });
+    if (parsed.success) {
+      setFieldErrors({});
+      return true;
+    }
+
+    setFieldErrors(mapAuthFieldErrors(formatZodError(parsed.error).fieldErrors));
+    return false;
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validate()) return;
 
-    mutation.mutate({ email, password });
+    mutation.mutate(
+      { email, password },
+      {
+        onError: (error) => {
+          if (!(error instanceof ApiError)) return;
+          const apiFieldErrors = fieldErrorsFromDetails(error.details);
+          if (apiFieldErrors) {
+            setFieldErrors(mapAuthFieldErrors(apiFieldErrors));
+          }
+        },
+      },
+    );
   }
 
   const formError =
@@ -63,7 +78,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       ? mutation.error.message
       : mutation.error
         ? "Something went wrong. Please try again."
-        : null;
+        : fieldErrors.form ?? null;
 
   return (
     <div className="w-full max-w-sm">

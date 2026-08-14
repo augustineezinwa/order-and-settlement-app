@@ -12,6 +12,11 @@ import { Input } from "@/components/ui/input";
 import { formatUsd, parseUsdToCents } from "@/lib/money";
 import { lineTotalCents } from "@/lib/orders/line-item";
 import { cn } from "@/lib/utils";
+import {
+  fieldErrorsFromDetails,
+  mapCreateOrderFieldErrors,
+  type CreateOrderFieldErrors,
+} from "@/lib/api/field-errors";
 import type { ZodError } from "zod";
 
 import { createOrderSchema } from "@shared/api/schemas/order.schema";
@@ -23,12 +28,7 @@ type LineItemRow = {
   unitPrice: string;
 };
 
-type FieldErrors = {
-  customerName?: string;
-  dueDate?: string;
-  lineItems?: Record<string, { description?: string; quantity?: string; unitPrice?: string }>;
-  form?: string;
-};
+type FieldErrors = CreateOrderFieldErrors;
 
 function tomorrowIsoDate(): string {
   const date = new Date();
@@ -196,6 +196,13 @@ export function CreateOrderForm() {
     createOrder.mutate(payload, {
       onSuccess: (order) => {
         router.push(`/orders/${order.id}`);
+      },
+      onError: (error) => {
+        if (!(error instanceof ApiError)) return;
+        const apiFieldErrors = fieldErrorsFromDetails(error.details);
+        if (apiFieldErrors) {
+          setFieldErrors(mapCreateOrderFieldErrors(apiFieldErrors));
+        }
       },
     });
   }
