@@ -187,4 +187,53 @@ describe.skipIf(!dbReady)("payments integration", () => {
     });
     expect(res.status).toBe(404);
   });
+
+  it("serializes concurrent payments via row lock — one succeeds, one overpays", async () => {
+    const app = createApp({
+      authService: createMockAuthService(),
+      orderService,
+      paymentService,
+    });
+    const order = await createTestOrder(app);
+
+    const payBody = JSON.stringify({ amountCents: 60_000, paidAt: daysFromToday(0) });
+    const pay = () =>
+      app.request(`/orders/${order.id}/payments`, {
+        method: "POST",
+        headers: headersFor("token-user-a"),
+        body: payBody,
+      });
+
+    const [first, second] = await Promise.all([pay(), pay()]);
+
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([201, 400]);
+
+    const success = first.status === 201 ? first : second;
+    const rejected = first.status === 400 ? first : second;
+
+    await expect(success.json()).resolves.toMatchObject({
+      payment: { amountCents: 60_000 },
+      order: {
+        orderTotalCents: 100_000,
+        amountPaidCents: 60_000,
+        amountDueCents: 40_000,
+        status: "partially_paid",
+      },
+    });
+
+    await expect(rejected.json()).resolves.toEqual({
+      error: {
+        message: "Payment exceeds amount due. Maximum allowed: 40000 cents",
+        code: "OVERPAYMENT",
+        details: { maxAllowedCents: 40_000 },
+      },
+    });
+
+    const historyRes = await app.request(`/orders/${order.id}/payments`, {
+      headers: headersFor("token-user-a"),
+    });
+    const history = (await historyRes.json()) as { payments: unknown[] };
+    expect(history.payments).toHaveLength(1);
+  });
 });
