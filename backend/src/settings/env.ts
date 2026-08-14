@@ -11,6 +11,8 @@ if (existsSync(".env")) {
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),
+    SUPABASE_URL: z.url(),
+    SUPABASE_ANON_KEY: z.string().min(1),
     PORT: z.coerce.number().int().positive().default(8787),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   },
