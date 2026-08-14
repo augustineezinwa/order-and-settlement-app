@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
+import { useRequireSession } from "@/api/auth/use-require-session";
+import { useOrders } from "@/api/orders/queries";
+import { ApiError } from "@/api/client";
 import { AmountsDueChart } from "@/components/dashboard/amounts-due-chart";
 import { LedgerSummary } from "@/components/dashboard/ledger-summary";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
@@ -19,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { portfolioTotals } from "@/lib/orders/aggregate";
-import { demoOrders } from "@/lib/orders/demo-orders";
 import { ORDER_STATUSES, type OrderStatus, type OrderSummary } from "@/lib/orders/types";
 import { formatUsd } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -36,19 +38,19 @@ function compareOrders(a: OrderSummary, b: OrderSummary, key: SortKey, dir: "asc
 
 export function OrdersDashboard() {
   const router = useRouter();
+  const hasSession = useRequireSession();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("dueDate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const portfolio = useMemo(() => portfolioTotals(demoOrders), []);
+  const apiStatus = statusFilter === "all" ? undefined : statusFilter;
+  const { data: orders = [], isLoading, error } = useOrders(apiStatus);
+
+  const portfolio = useMemo(() => portfolioTotals(orders), [orders]);
 
   const filtered = useMemo(() => {
-    let rows = [...demoOrders];
-
-    if (statusFilter !== "all") {
-      rows = rows.filter((o) => o.status === statusFilter);
-    }
+    let rows = [...orders];
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -62,7 +64,7 @@ export function OrdersDashboard() {
 
     rows.sort((a, b) => compareOrders(a, b, sortKey, sortDir));
     return rows;
-  }, [search, sortKey, sortDir, statusFilter]);
+  }, [orders, search, sortKey, sortDir]);
 
   const totals = useMemo(
     () => ({
@@ -85,6 +87,29 @@ export function OrdersDashboard() {
   function sortIndicator(key: SortKey) {
     if (sortKey !== key) return null;
     return sortDir === "asc" ? " ↑" : " ↓";
+  }
+
+  if (!hasSession) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-24 animate-pulse rounded-lg bg-muted" />
+        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+      </div>
+    );
+  }
+
+  if (error) {
+    const message = error instanceof ApiError ? error.message : "Failed to load orders.";
+    return (
+      <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        {message}
+      </p>
+    );
   }
 
   return (
@@ -114,9 +139,9 @@ export function OrdersDashboard() {
       />
 
       <div className="grid gap-6 rounded-lg border border-border bg-card p-5 lg:grid-cols-2 lg:p-6">
-        <StatusCompositionChart orders={demoOrders} />
+        <StatusCompositionChart orders={orders} />
         <div className="border-t border-border pt-6 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          <AmountsDueChart orders={demoOrders} />
+          <AmountsDueChart orders={orders} />
         </div>
       </div>
 
@@ -217,9 +242,6 @@ export function OrdersDashboard() {
             </TableRow>
           </TableFooter>
         </Table>
-        <p className="border-t px-4 py-3 font-mono text-xs text-muted-foreground">
-          Demo data · connect GET /orders after sign-in
-        </p>
       </div>
     </div>
   );

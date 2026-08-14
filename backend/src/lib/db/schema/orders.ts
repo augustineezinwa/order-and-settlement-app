@@ -1,3 +1,4 @@
+import { ORDER_STATUSES } from "@shared/api/types/orders.js";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -13,12 +14,7 @@ import {
 
 // `overdue` is applied at read time (due date passed while not fully paid); the stored
 // value is otherwise derived from payments on each write.
-export const orderStatus = pgEnum("order_status", [
-  "pending",
-  "partially_paid",
-  "paid",
-  "overdue",
-]);
+export const orderStatus = pgEnum("order_status", [...ORDER_STATUSES]);
 
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),

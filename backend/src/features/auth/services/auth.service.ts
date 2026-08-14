@@ -2,15 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { HttpError } from "../../../global/errors.js";
 
-export type AuthUser = {
-  id: string;
-  email: string;
-};
+import type { AuthSession, AuthUser } from "@shared/api/types/auth.js";
 
-export type AuthSession = {
-  accessToken: string;
-  user: AuthUser;
-};
+export type { AuthSession, AuthUser };
 
 function mapSignUpError(message: string): HttpError {
   const lower = message.toLowerCase();
@@ -20,43 +14,65 @@ function mapSignUpError(message: string): HttpError {
   return new HttpError(400, message, "SIGN_UP_FAILED");
 }
 
-function mapSignInError(): HttpError {
-  return new HttpError(401, "Invalid email or password", "INVALID_CREDENTIALS");
+function mapSignInError(message?: string): HttpError {
+  return new HttpError(401, message ?? "Invalid email or password", "INVALID_CREDENTIALS");
 }
 
-export function createAuthService(supabase: SupabaseClient) {
+function toSession(
+  accessToken: string,
+  user: { id: string; email: string },
+): AuthSession {
+  return {
+    accessToken,
+    user: { id: user.id, email: user.email },
+  };
+}
+
+export function createAuthService(supabase: SupabaseClient, supabaseAdmin: SupabaseClient) {
   return {
     async signUp({ email, password }: { email: string; password: string }): Promise<AuthSession> {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        throw mapSignUpError(error.message);
+      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        throw mapSignUpError(createError.message);
       }
 
-      const accessToken = data.session?.access_token;
-      if (!accessToken || !data.user?.email) {
+      if (!created.user?.email) {
+        throw new HttpError(400, "Failed to create account", "SIGN_UP_FAILED");
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.session?.access_token) {
         throw new HttpError(
           400,
-          "Email confirmation required before sign in",
-          "EMAIL_CONFIRMATION_REQUIRED",
+          error?.message ?? "Account created but sign-in failed. Try signing in.",
+          "SIGN_UP_FAILED",
         );
       }
 
-      return {
-        accessToken,
-        user: { id: data.user.id, email: data.user.email },
-      };
+      return toSession(data.session.access_token, {
+        id: created.user.id,
+        email: created.user.email,
+      });
     },
 
     async signIn({ email, password }: { email: string; password: string }): Promise<AuthSession> {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data.session?.access_token || !data.user?.email) {
+      if (error) {
+        throw mapSignInError(error.message);
+      }
+      if (!data.session?.access_token || !data.user?.email) {
         throw mapSignInError();
       }
 
-      return {
-        accessToken: data.session.access_token,
-        user: { id: data.user.id, email: data.user.email },
-      };
+      return toSession(data.session.access_token, {
+        id: data.user.id,
+        email: data.user.email,
+      });
     },
 
     async getUserFromToken(token: string): Promise<AuthUser> {

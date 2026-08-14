@@ -1,7 +1,8 @@
+import type { OrderStatus } from "@shared/api/types/orders.js";
 import type { orderStatus } from "../../../lib/db/schema/orders.js";
 
 export type StoredOrderStatus = (typeof orderStatus.enumValues)[number];
-export type DisplayOrderStatus = StoredOrderStatus;
+export type DisplayOrderStatus = OrderStatus;
 
 export function todayDateString(): string {
   return new Date().toISOString().slice(0, 10);

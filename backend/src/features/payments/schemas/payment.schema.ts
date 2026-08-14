@@ -1,9 +1,2 @@
-import { z } from "zod";
-
-export const recordPaymentSchema = z.object({
-  amountCents: z.number().int().min(1),
-  paidAt: z.string().date(),
-  note: z.string().optional(),
-});
-
-export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
+export type { RecordPaymentInput } from "@shared/api/schemas/payment.schema.js";
+export { recordPaymentSchema } from "@shared/api/schemas/payment.schema.js";

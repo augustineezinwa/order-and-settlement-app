@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { useSignIn, useSignUp } from "@/api/auth/mutations";
+import { ApiError } from "@/api/client";
 import { Input } from "@/components/ui/input";
-import { AuthApiError, signIn, signUp } from "@/lib/auth/api";
-import { saveSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,14 +34,14 @@ const copy: Record<Mode, { heading: string; subhead: string; submit: string; sub
 };
 
 export function AuthForm({ mode }: { mode: Mode }) {
-  const router = useRouter();
   const text = copy[mode];
+  const signInMutation = useSignIn();
+  const signUpMutation = useSignUp();
+  const mutation = mode === "sign-up" ? signUpMutation : signInMutation;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   function validate(): boolean {
     const next: typeof fieldErrors = {};
@@ -54,20 +53,17 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setFormError(null);
     if (!validate()) return;
 
-    setSubmitting(true);
-    try {
-      const session = mode === "sign-up" ? await signUp(email, password) : await signIn(email, password);
-      saveSession(session);
-      router.push("/dashboard");
-    } catch (err) {
-      setFormError(err instanceof AuthApiError ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    mutation.mutate({ email, password });
   }
+
+  const formError =
+    mutation.error instanceof ApiError
+      ? mutation.error.message
+      : mutation.error
+        ? "Something went wrong. Please try again."
+        : null;
 
   return (
     <div className="w-full max-w-sm">
@@ -129,10 +125,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={mutation.isPending}
           className="inline-flex h-10 w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 disabled:pointer-events-none disabled:opacity-60"
         >
-          {submitting ? text.submitting : text.submit}
+          {mutation.isPending ? text.submitting : text.submit}
         </button>
       </form>
 

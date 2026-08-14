@@ -1,3 +1,4 @@
+import type { PaymentRecord, RecordPaymentResult } from "@shared/api/types/payments.js";
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import { HttpError } from "../../../global/errors.js";
@@ -15,23 +16,7 @@ import { orderItems, orders } from "../../../lib/db/schema/orders.js";
 import { payments } from "../../../lib/db/schema/payments.js";
 import type { RecordPaymentInput } from "../schemas/payment.schema.js";
 
-export type PaymentRecord = {
-  id: string;
-  amountCents: number;
-  paidAt: string;
-  note: string | null;
-  recordedBy: string;
-};
-
-export type RecordPaymentResult = {
-  payment: PaymentRecord;
-  order: {
-    status: ReturnType<typeof deriveDisplayStatus>;
-    orderTotalCents: number;
-    amountPaidCents: number;
-    amountDueCents: number;
-  };
-};
+export type { PaymentRecord, RecordPaymentResult };
 
 type PaymentRow = typeof payments.$inferSelect;
 type OrderRow = typeof orders.$inferSelect;
